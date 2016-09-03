@@ -29,5 +29,5 @@ conda install -c rdkit rdkit
 ```
 python isoRMSD.py mol1.pdb mol2.pdb rmsd.txt
 ```
-isoRMSD.py will output two RMSD, one is fitted, another is no fit.
+isoRMSD.py will output two RMSD, one is fitted, another is no fit.  
 Not fit  RMSD mean no change in molecules coordinates.  
