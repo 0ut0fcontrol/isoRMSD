@@ -15,19 +15,26 @@ RDKit is a collection of cheminformatics and machine-learning software written i
 The easiest way to installing RDKit is using the excellent conda package manager in Anaconda python.  
 And then get RDKit for running isoRMSD.py.  
 
-1. Download and install a new python from [Anaconda](https://www.continuum.io/). python 2 or 3 is OK
+### 1. Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.continuum.io/)
 Install command is simple!
 ```
-bash Anaconda2-4.1.1-Linux-x86_64.sh
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
 # All enter 'yes' is OK.
 ```
-2. Download and install new python package [RDkit](http://rdkit.org/).
+### 2. Install [RDkit](http://rdkit.org/)
 ```
-conda install -c rdkit rdkit
+conda create -n rmsd -c conda-forge rdkit
+conda activate rmsd
+
+# Or conda install -c rdkit rdkit
 ```
-3. Usage:
+### 3. Usage
 ```
-python isoRMSD.py mol1.pdb mol2.pdb rmsd.txt
+cd example
+python ../isoRMSD.py mol1.pdb mol2.pdb rmsd.txt
+# Best_RMSD: 0.666
+# Best_Not_Fit_RMSD: 1.703
 ```
 isoRMSD.py will output two RMSD, one is fitted, another is no fit.  
 Not fit  RMSD mean no change in molecules coordinates.  
