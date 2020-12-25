@@ -9,6 +9,7 @@ import os
 from os.path import split
 import sys
 import math
+from numpy.lib.shape_base import column_stack
 
 # rdkit imports
 from rdkit import Chem
@@ -16,7 +17,7 @@ from rdkit.Chem import AllChem
 from rdkit.Chem.AllChem import AlignMol
 
 
-def GetBestRMSD(probe, ref, refConfId=-1, probeConfId=-1, maps=None):
+def GetBestRMSD(probe, ref, refConfId=-1, probeConfId=-1, maps=None, align=True):
     """Returns the optimal RMS for aligning two molecules, taking
     symmetry into account. As a side-effect, the probe molecule is
     left in the aligned state.
@@ -42,44 +43,37 @@ def GetBestRMSD(probe, ref, refConfId=-1, probeConfId=-1, maps=None):
     # When mapping the coordinate of probe will changed!!!
     ref.pos = orginXYZ(ref)
     probe.pos = orginXYZ(probe)
-
+    try:
+        name = probe.GetProp("_Name")
+    except KeyError as e:
+        name = "NaN"
     if not maps:
         matches = ref.GetSubstructMatches(probe, uniquify=False)
         if not matches:
-            # raise ValueError(
-            #     "mol %s does not match mol %s"
-            #     % (ref.GetProp("_Name"), probe.GetProp("_Name"))
-            # )
-            pass
+            raise ValueError(
+                "mol %s does not match mol %s"
+                % (ref.GetProp("_Name"), probe.GetProp("_Name"))
+            )
         if len(matches) > 1e6:
-            warnings.warn(
+            print(
                 "{} matches detected for molecule {}, this may lead to a performance slowdown.".format(
-                    len(matches), probe.GetProp("_Name")
+                    len(matches), name
                 )
             )
         maps = [list(enumerate(match)) for match in matches]
-    bestRMS = 1000.0
-    bestRMSD = 1000.0
-    bestMap = None
+    bestRMSD = 10000.0
     for amap in maps:
-        rms = AlignMol(probe, ref, probeConfId, refConfId, atomMap=amap)
-        rmsd = RMSD(probe, ref, amap)
-        if rmsd < bestRMSD:
-            bestRMSD = rmsd
-        if rms < bestRMS:
-            bestRMS = rms
-            bestMap = amap
-
-    # finally repeate the best alignment :
-    if bestMap != amap:
-        AlignMol(probe, ref, probeConfId, refConfId, atomMap=bestMap)
-
-    return bestRMS, bestRMSD
+        if align:
+            rmsd = AlignMol(probe, ref, probeConfId, refConfId, atomMap=amap)
+        else:
+            rmsd = RMSD_NotAlign(probe, ref, amap)
+        bestRMSD = min(bestRMSD, rmsd)
+    return bestRMSD
 
 
 # Map is probe -> ref
 # [(1:3),(2:5),...,(10,1)]
-def RMSD(probe, ref, amap):
+def RMSD_NotAlign(probe, ref, amap):
     rmsd = 0.0
     # print(amap)
     atomNum = ref.GetNumAtoms() + 0.0
@@ -108,7 +102,7 @@ def orginXYZ(mol):
 
 if __name__ == "__main__":
     import argparse
-    from pathlib import Path
+    import pandas as pd
     from oddt.toolkits import rdk as toolkit
 
     parser = argparse.ArgumentParser(__doc__)
@@ -136,10 +130,32 @@ if __name__ == "__main__":
     probe_fmt = args.probe.split(".")[-1]
     probe_oddt_supp = toolkit.readfile(probe_fmt, args.probe)
 
-    for probe_oddt in probe_oddt_supp:
+    column_names = ["Mol_Name", "RMSD_Align", "RMSD_NotAlign"]
+    print(column_names)
+    data = []
+    for i, probe_oddt in enumerate(probe_oddt_supp):
         if probe_oddt is None:
-            continue
-        probe_rdk = Chem.RemoveHs(probe_oddt.Mol)
-        ref = AllChem.AssignBondOrdersFromTemplate(probe_rdk, ref_rdk)
-        rms, rmsd = GetBestRMSD(probe_rdk, ref)
-        print("\nBest_RMSD: %.3f\nBest_Not_Fit_RMSD: %.3f\n" % (rms, rmsd))
+            name = "NaN"
+            rmsd_notalign = 10000.0
+            rmsd_align = 10000.0
+        else:
+            probe_rdk = Chem.RemoveHs(probe_oddt.Mol)
+            try:
+                name = probe_rdk.GetProp("_Name")
+                name = "_".join(name.split())
+            except KeyError as e:
+                name = "NaN"
+
+            print("\nAssign bond orders from probe to reference.")
+            # will raise warning("More than one matching pattern found - picking one")
+            ref = AllChem.AssignBondOrdersFromTemplate(probe_rdk, ref_rdk)
+
+            # order is matter because GetBestRMSD(align=True) will change probe mol.
+            rmsd_notalign = GetBestRMSD(probe_rdk, ref, align=False)
+            rmsd_align = GetBestRMSD(probe_rdk, ref, align=True)
+        print(f"mol{i:04d} {name} {rmsd_align} {rmsd_notalign}")
+        data.append((name, rmsd_align, rmsd_notalign))
+    df = pd.DataFrame(data, columns=column_names)
+    df.index.name = "index"
+    df.to_csv(args.output_csv)
+    print(f"\nresult save in {args.output_csv}")
