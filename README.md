@@ -8,13 +8,6 @@
 This script is base on RDKit cookbook -- [RMSD Calculation between N molecules](http://www.rdkit.org/docs/Cookbook.html).
 
 
-Howto
------
-You need RDKit to run isoRMSD.py.
-RDKit is a collection of cheminformatics and machine-learning software written in C++ and Python.
-The easiest way to installing RDKit is using the excellent conda package manager in Anaconda python.  
-And then get RDKit for running isoRMSD.py.  
-
 ### 1. Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or [Anaconda](https://www.continuum.io/)
 Install command is simple!
 ```
@@ -22,13 +15,15 @@ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
 # All enter 'yes' is OK.
 ```
-### 2. Install [RDkit](http://rdkit.org/)
+
+### 2. Install [RDKit](http://rdkit.org/)
 ```
-conda create -n rmsd -c conda-forge rdkit
+conda create -n rmsd -c conda-forge -c oddt rdkit oddt
 conda activate rmsd
 
-# Or conda install -c rdkit rdkit
+# Or conda install -c conda-forge -c oddt rdkit oddt
 ```
+
 ### 3. Usage
 ```console
 (rmsd) [jcyang@x038:isoRMSD]$ python isoRMSD.py -r example/mol1.pdb -p example/mol2.pdb -o example/rmsd.csv
@@ -41,7 +36,8 @@ result save in example/rmsd.csv
 (rmsd) [jcyang@x038:isoRMSD]$ cat rmsd.csv 
 index,Mol_Name,RMSD_Align,RMSD_NotAlign
 0,NaN,0.6661093347908585,1.7032691013398167
-(rmsd) [jcyang@x038:isoRMSD]$ python isoRMSD.py -r example2/xtal-lig.pdb -p example2/test.sdf -o example2/rmsd.txt['Mol_Name', 'RMSD_Align', 'RMSD_NotAlign']
+(rmsd) [jcyang@x038:isoRMSD]$ python isoRMSD.py -r example2/xtal-lig.pdb -p example2/test.mol2 -o example2/rmsd.txt
+['Mol_Name', 'RMSD_Align', 'RMSD_NotAlign']
 
 Assign bond orders from probe to reference.
 [12:00:10] WARNING: More than one matching pattern found - picking one
