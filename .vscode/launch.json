@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "pdb_vs_pdb",
+            "type": "python",
+            "request": "launch",
+            "program": "isoRMSD.py",
+            "args": ["-r", "example/mol1.pdb", "-p", "example/mol2.pdb"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "pdb_vs_4pdb",
+            "type": "python",
+            "request": "launch",
+            "program": "isoRMSD.py",
+            "args": ["-r", "example2/xtal-lig.pdb", "-p", "example2/test.pdb"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "pdb_vs_4mol2",
+            "type": "python",
+            "request": "launch",
+            "program": "isoRMSD.py",
+            "args": ["-r", "example2/xtal-lig.pdb", "-p", "example2/test.mol2"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "pdb_vs_4sdf",
+            "type": "python",
+            "request": "launch",
+            "program": "isoRMSD.py",
+            "args": ["-r", "example2/xtal-lig.pdb", "-p", "example2/test.sdf"],
+            "console": "integratedTerminal"
+        }
+    ]
+}

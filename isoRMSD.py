@@ -4,7 +4,9 @@ calculates RMSD differences between 2 conformation with different atom names.
 
 @author: JC <yangjincai@nibs.ac.cn>
 """
+# %%
 import os
+from os.path import split
 import sys
 import math
 
@@ -44,10 +46,11 @@ def GetBestRMSD(probe, ref, refConfId=-1, probeConfId=-1, maps=None):
     if not maps:
         matches = ref.GetSubstructMatches(probe, uniquify=False)
         if not matches:
-            raise ValueError(
-                "mol %s does not match mol %s"
-                % (ref.GetProp("_Name"), probe.GetProp("_Name"))
-            )
+            # raise ValueError(
+            #     "mol %s does not match mol %s"
+            #     % (ref.GetProp("_Name"), probe.GetProp("_Name"))
+            # )
+            pass
         if len(matches) > 1e6:
             warnings.warn(
                 "{} matches detected for molecule {}, this may lead to a performance slowdown.".format(
@@ -57,6 +60,7 @@ def GetBestRMSD(probe, ref, refConfId=-1, probeConfId=-1, maps=None):
         maps = [list(enumerate(match)) for match in matches]
     bestRMS = 1000.0
     bestRMSD = 1000.0
+    bestMap = None
     for amap in maps:
         rms = AlignMol(probe, ref, probeConfId, refConfId, atomMap=amap)
         rmsd = RMSD(probe, ref, amap)
@@ -103,23 +107,39 @@ def orginXYZ(mol):
 
 
 if __name__ == "__main__":
-    usage = """isoRMSD.py will output two RMSD, one is fitted, another is no fit.
-    Not fit RMSD mean no change in molecules coordinates. 
-    
-    Usage:python isoRMSD.py mol1.pdb mol2.pdb rmsd.txt
+    import argparse
+    from pathlib import Path
+    from oddt.toolkits import rdk as toolkit
 
-    """
-    if len(sys.argv) < 4:
-        print(usage)
-        sys.exit()
+    parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument(
+        "-r",
+        "--reference",
+        required=True,
+        help="reference mol in .pdb, .mol2 or .sdf format",
+    )
+    parser.add_argument(
+        "-p", "--probe", required=True, help="probe mols in .pdb, .mol2, or .sdf"
+    )
+    parser.add_argument(
+        "-o",
+        "--output_csv",
+        default="rmsd.csv",
+        help="output rmsd in a csv file, default: rmsd.csv",
+    )
+    args = parser.parse_args()
 
-    ref = Chem.MolFromPDBFile(sys.argv[1])
-    probe = Chem.MolFromPDBFile(sys.argv[2])
+    ref_fmt = args.reference.split(".")[-1]
+    ref_oddt = next(toolkit.readfile(ref_fmt, args.reference))
+    ref_rdk = Chem.RemoveHs(ref_oddt.Mol)
 
-    # here, rms is Fitted, rmsd is NOT Fit!!!
-    rms, rmsd = GetBestRMSD(probe, ref)
+    probe_fmt = args.probe.split(".")[-1]
+    probe_oddt_supp = toolkit.readfile(probe_fmt, args.probe)
 
-    print("\nBest_RMSD: %.3f\nBest_Not_Fit_RMSD: %.3f\n" % (rms, rmsd))
-    out = open(sys.argv[3], "w")
-    out.write("Best_RMSD: %.3f\nBest_Not_Fit_RMSD: %.3f\n" % (rms, rmsd))
-    out.close()
+    for probe_oddt in probe_oddt_supp:
+        if probe_oddt is None:
+            continue
+        probe_rdk = Chem.RemoveHs(probe_oddt.Mol)
+        ref = AllChem.AssignBondOrdersFromTemplate(probe_rdk, ref_rdk)
+        rms, rmsd = GetBestRMSD(probe_rdk, ref)
+        print("\nBest_RMSD: %.3f\nBest_Not_Fit_RMSD: %.3f\n" % (rms, rmsd))
