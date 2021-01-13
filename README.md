@@ -2,7 +2,7 @@
 
 - isoRMSD can calculate RMSD between 2 conformers with different atom names.
 - The atom order of molecules also don't need to be same.
-- Hydration or not is OK.
+- Hydrogens will be ignore !!!
 - This script is for small molecule only. It will be very slow for protein.
 
 This script is base on RDKit cookbook -- [RMSD Calculation between N molecules](http://www.rdkit.org/docs/Cookbook.html).
